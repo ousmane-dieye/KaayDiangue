@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { CheckCircle, XCircle, BookOpen, Zap } from 'lucide-react';
 import ReactPlayer from 'react-player';
 
+// Cast to any to avoid type issues with the library
+const VideoPlayer = ReactPlayer as any;
+
 export default function LessonView() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -126,7 +129,7 @@ export default function LessonView() {
               </div>
             </div>
           ) : (
-            <ReactPlayer
+            <VideoPlayer
               url={lesson.video_url}
               className="absolute top-0 left-0"
               width="100%"
