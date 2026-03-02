@@ -3,10 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircle, XCircle, BookOpen, Zap } from 'lucide-react';
-import ReactPlayer from 'react-player';
-
-// Cast to any to avoid type issues with the library
-const VideoPlayer = ReactPlayer as any;
 
 export default function LessonView() {
   const { id } = useParams();
@@ -39,8 +35,8 @@ export default function LessonView() {
     apiRequest(`/quizzes/${id}`).then(setQuizzes);
   }, [id]);
 
-  const handleVideoError = () => {
-    console.error('Video playback error');
+  const handleVideoError = (e: any) => {
+    console.error('Video playback error:', e);
     setVideoError(true);
   };
 
@@ -109,39 +105,59 @@ export default function LessonView() {
 
   if (!lesson) return <div>Loading...</div>;
 
+  const getYoutubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+  };
+
+  const embedUrl = getYoutubeEmbedUrl(lesson.video_url);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Video Section */}
       <div className="bg-white dark:bg-gray-800 shadow-lg overflow-hidden rounded-2xl transition-colors duration-200">
         <div className="aspect-w-16 aspect-h-9 bg-black relative pt-[56.25%]">
-          {videoError ? (
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              title={lesson.title}
+              className="absolute top-0 left-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
             <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 text-white p-6 text-center">
               <div>
-                <p className="mb-4 text-lg font-medium">Unable to play video directly.</p>
-                <a 
-                  href={lesson.video_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Watch on YouTube
-                </a>
+                <p className="mb-4 text-lg font-medium">
+                  {!lesson.video_url ? "No video available for this lesson." : "Unable to play video directly."}
+                </p>
+                {lesson.video_url && (
+                  <a 
+                    href={lesson.video_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Watch on YouTube
+                  </a>
+                )}
               </div>
             </div>
-          ) : (
-            <VideoPlayer
-              url={lesson.video_url}
-              className="absolute top-0 left-0"
-              width="100%"
-              height="100%"
-              controls
-              onEnded={handleVideoEnded}
-              onError={handleVideoError}
-            />
           )}
         </div>
-        <div className="px-6 py-6">
+        <div className="px-6 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{lesson.title}</h1>
+          {!videoWatched && (
+            <button
+              onClick={handleVideoEnded}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Mark as Watched
+            </button>
+          )}
         </div>
       </div>
 
