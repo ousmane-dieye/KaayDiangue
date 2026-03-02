@@ -130,8 +130,10 @@ export function initDb() {
 
     // Sample Lessons
     const insertLesson = db.prepare('INSERT INTO lessons (course_id, title, video_url, summary, order_index) VALUES (?, ?, ?, ?, ?)');
-    const lesson1 = insertLesson.run(courseId, 'HTML Basics', 'https://youtu.be/yU20m38Kwgw?si=YBiYjEsIwxN2OxNb', 'HTML is the standard markup language for Web pages.', 1).lastInsertRowid;
-    const lesson2 = insertLesson.run(courseId, 'CSS Styling', 'https://www.youtube.com/watch?v=1PnVor36_40', 'CSS is the language we use to style an HTML document.', 2).lastInsertRowid;
+    // HTML Crash Course (Traversy Media)
+    const lesson1 = insertLesson.run(courseId, 'HTML Basics', 'https://www.youtube.com/watch?v=UB1O30fR-EE', 'HTML is the standard markup language for Web pages.', 1).lastInsertRowid;
+    // CSS Crash Course (Traversy Media)
+    const lesson2 = insertLesson.run(courseId, 'CSS Styling', 'https://www.youtube.com/watch?v=yfoY53QXEnI', 'CSS is the language we use to style an HTML document.', 2).lastInsertRowid;
 
     // Sample Quizzes
     const insertQuiz = db.prepare('INSERT INTO quizzes (lesson_id, question, options, correct_option) VALUES (?, ?, ?, ?)');
@@ -159,10 +161,11 @@ export function initDb() {
       2
     ).lastInsertRowid;
 
-    const pyLesson1 = insertLesson.run(pythonCourseId, 'Variables & Data Types', 'https://www.youtube.com/watch?v=khKv-8q7YmY', 'Learn how to store data using variables and different data types in Python.', 1).lastInsertRowid;
+    // Python Tutorial (Mosh)
+    const pyLesson1 = insertLesson.run(pythonCourseId, 'Variables & Data Types', 'https://www.youtube.com/watch?v=kqtD5dpn9C8', 'Learn how to store data using variables and different data types in Python.', 1).lastInsertRowid;
     insertQuiz.run(pyLesson1, 'Which is a valid variable name in Python?', JSON.stringify(['2myvar', 'my-var', 'my_var']), 2);
 
-    const pyLesson2 = insertLesson.run(pythonCourseId, 'Control Flow', 'https://www.youtube.com/watch?v=PqFKRqpHrjw', 'Understand if/else statements and loops to control program flow.', 2).lastInsertRowid;
+    const pyLesson2 = insertLesson.run(pythonCourseId, 'Control Flow', 'https://www.youtube.com/watch?v=kqtD5dpn9C8', 'Understand if/else statements and loops to control program flow.', 2).lastInsertRowid;
     insertQuiz.run(pyLesson2, 'Which keyword is used for loops?', JSON.stringify(['loop', 'for', 'repeat']), 1);
 
     // Course 3: Digital Marketing 101
@@ -174,7 +177,8 @@ export function initDb() {
       2
     ).lastInsertRowid;
 
-    const mktLesson1 = insertLesson.run(marketingCourseId, 'SEO Basics', 'https://www.youtube.com/watch?v=DvwS7cV9GmQ', 'Search Engine Optimization helps your website rank higher in search results.', 1).lastInsertRowid;
+    // SEO Tutorial (Ahrefs)
+    const mktLesson1 = insertLesson.run(marketingCourseId, 'SEO Basics', 'https://www.youtube.com/watch?v=xsVTqzratPs', 'Search Engine Optimization helps your website rank higher in search results.', 1).lastInsertRowid;
     insertQuiz.run(mktLesson1, 'What does SEO stand for?', JSON.stringify(['Search Engine Optimization', 'Social Engine Operation', 'Site External Optimization']), 0);
 
     // Course 4: React Fundamentals
@@ -186,7 +190,8 @@ export function initDb() {
       2
     ).lastInsertRowid;
 
-    const reactLesson1 = insertLesson.run(reactCourseId, 'Components & Props', 'https://www.youtube.com/watch?v=kVeOpcw4GWY', 'React apps are built using reusable components that accept inputs called props.', 1).lastInsertRowid;
+    // React Tutorial (Mosh)
+    const reactLesson1 = insertLesson.run(reactCourseId, 'Components & Props', 'https://www.youtube.com/watch?v=SqcY0GlETPk', 'React apps are built using reusable components that accept inputs called props.', 1).lastInsertRowid;
     insertQuiz.run(reactLesson1, 'What is used to pass data to a component?', JSON.stringify(['State', 'Props', 'Context']), 1);
 
     console.log('Additional content seeded!');
@@ -195,7 +200,7 @@ export function initDb() {
   // Migration: Update existing placeholder videos to real ones if they exist
   try {
     const updateVideo = db.prepare('UPDATE lessons SET video_url = ? WHERE title = ?');
-    updateVideo.run('https://youtu.be/yU20m38Kwgw?si=YBiYjEsIwxN2OxNb', 'HTML Basics');
+    updateVideo.run('https://www.youtube.com/watch?v=ok-plXXHlWw', 'HTML Basics');
     updateVideo.run('https://www.youtube.com/watch?v=OEV8gMkCHXQ', 'CSS Styling');
     updateVideo.run('https://www.youtube.com/watch?v=kqtD5dpn9C8', 'Variables & Data Types');
     updateVideo.run('https://www.youtube.com/watch?v=kqtD5dpn9C8', 'Control Flow');
