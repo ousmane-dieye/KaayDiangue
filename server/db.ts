@@ -130,7 +130,7 @@ export function initDb() {
 
     // Sample Lessons
     const insertLesson = db.prepare('INSERT INTO lessons (course_id, title, video_url, summary, order_index) VALUES (?, ?, ?, ?, ?)');
-    const lesson1 = insertLesson.run(courseId, 'HTML Basics', 'https://www.youtube.com/watch?v=kUMe1FH4CHE', 'HTML is the standard markup language for Web pages.', 1).lastInsertRowid;
+    const lesson1 = insertLesson.run(courseId, 'HTML Basics', 'https://youtu.be/yU20m38Kwgw?si=YBiYjEsIwxN2OxNb', 'HTML is the standard markup language for Web pages.', 1).lastInsertRowid;
     const lesson2 = insertLesson.run(courseId, 'CSS Styling', 'https://www.youtube.com/watch?v=1PnVor36_40', 'CSS is the language we use to style an HTML document.', 2).lastInsertRowid;
 
     // Sample Quizzes
@@ -195,7 +195,7 @@ export function initDb() {
   // Migration: Update existing placeholder videos to real ones if they exist
   try {
     const updateVideo = db.prepare('UPDATE lessons SET video_url = ? WHERE title = ?');
-    updateVideo.run('https://www.youtube.com/watch?v=ok-plXXHlWw', 'HTML Basics');
+    updateVideo.run('https://youtu.be/yU20m38Kwgw?si=YBiYjEsIwxN2OxNb', 'HTML Basics');
     updateVideo.run('https://www.youtube.com/watch?v=OEV8gMkCHXQ', 'CSS Styling');
     updateVideo.run('https://www.youtube.com/watch?v=kqtD5dpn9C8', 'Variables & Data Types');
     updateVideo.run('https://www.youtube.com/watch?v=kqtD5dpn9C8', 'Control Flow');
