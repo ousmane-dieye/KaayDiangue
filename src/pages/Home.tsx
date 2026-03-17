@@ -32,7 +32,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link to="/courses" className="btn-primary px-8 py-4 text-lg flex items-center group">
+            <Link to="/login" className="btn-primary px-8 py-4 text-lg flex items-center group">
               Commencer maintenant
               <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
