@@ -27,7 +27,7 @@ router.post('/register', (req, res) => {
     const stmt = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)');
     const info = stmt.run(username, hashedPassword, userRole);
     
-    const token = jwt.sign({ id: info.lastInsertRowid, username, role: userRole }, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: Number(info.lastInsertRowid), username, role: userRole }, JWT_SECRET, { expiresIn: '1d' });
     
     res.cookie('token', token, { 
       httpOnly: true, 
@@ -35,7 +35,7 @@ router.post('/register', (req, res) => {
       sameSite: 'none',
       maxAge: 24 * 60 * 60 * 1000 
     });
-    res.json({ user: { id: info.lastInsertRowid, username, role: userRole } });
+    res.json({ user: { id: Number(info.lastInsertRowid), username, role: userRole } });
   } catch (err: any) {
     console.error('Registration error:', err);
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {

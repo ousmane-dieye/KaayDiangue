@@ -120,7 +120,7 @@ router.post('/courses', (req: any, res) => {
   const { title, description, category, thumbnail } = req.body;
   const stmt = db.prepare('INSERT INTO courses (title, description, category, thumbnail, created_by) VALUES (?, ?, ?, ?, ?)');
   const info = stmt.run(title, description, category, thumbnail, req.user.id);
-  res.json({ id: info.lastInsertRowid, title, description, category, thumbnail, created_by: req.user.id });
+  res.json({ id: Number(info.lastInsertRowid), title, description, category, thumbnail, created_by: req.user.id });
 });
 
 router.post('/courses/:id/rate', (req: any, res) => {
@@ -182,7 +182,7 @@ router.post('/lessons', (req: any, res) => {
 
   const stmt = db.prepare('INSERT INTO lessons (course_id, title, video_url, summary, order_index) VALUES (?, ?, ?, ?, ?)');
   const info = stmt.run(course_id, title, video_url, summary, nextOrder);
-  res.json({ id: info.lastInsertRowid, course_id, title, video_url, summary, order_index: nextOrder });
+  res.json({ id: Number(info.lastInsertRowid), course_id, title, video_url, summary, order_index: nextOrder });
 });
 
 router.put('/lessons/:id', (req: any, res) => {
@@ -227,7 +227,7 @@ router.post('/quizzes', (req: any, res) => {
 
   const stmt = db.prepare('INSERT INTO quizzes (lesson_id, question, options, correct_option, type) VALUES (?, ?, ?, ?, ?)');
   const info = stmt.run(lesson_id, question, JSON.stringify(options), correct_option, type || 'multiple_choice');
-  res.json({ id: info.lastInsertRowid, lesson_id, question, options, correct_option, type: type || 'multiple_choice' });
+  res.json({ id: Number(info.lastInsertRowid), lesson_id, question, options, correct_option, type: type || 'multiple_choice' });
 });
 
 router.delete('/admin/quizzes/:id', (req: any, res) => {
