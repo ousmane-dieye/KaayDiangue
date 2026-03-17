@@ -3,15 +3,15 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
-import { initDb } from './server/db';
-import authRoutes from './server/routes/auth';
-import apiRoutes from './server/routes/api';
+import { initDb } from './server/db.ts';
+import authRoutes from './server/routes/auth.ts';
+import apiRoutes from './server/routes/api.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = 3000;
 
   // Initialize Database
   initDb();

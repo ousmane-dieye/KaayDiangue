@@ -1,5 +1,5 @@
 import express from 'express';
-import db from '../db';
+import db from '../db.ts';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
@@ -23,16 +23,65 @@ router.use(authenticate);
 
 // Courses
 router.get('/courses', (req, res) => {
-  const stmt = db.prepare('SELECT * FROM courses');
+  const stmt = db.prepare(`
+    SELECT c.*, 
+           (SELECT AVG(rating) FROM ratings WHERE course_id = c.id) as avg_rating,
+           (SELECT COUNT(*) FROM ratings WHERE course_id = c.id) as rating_count,
+           u.username as author_name
+    FROM courses c
+    LEFT JOIN users u ON c.created_by = u.id
+  `);
   const courses = stmt.all();
   res.json(courses);
 });
 
+router.get('/courses/random', (req, res) => {
+  const limit = parseInt(req.query.limit as string) || 5;
+  const stmt = db.prepare(`
+    SELECT c.*, 
+           (SELECT AVG(rating) FROM ratings WHERE course_id = c.id) as avg_rating,
+           (SELECT COUNT(*) FROM ratings WHERE course_id = c.id) as rating_count,
+           u.username as author_name
+    FROM courses c
+    LEFT JOIN users u ON c.created_by = u.id
+    ORDER BY RANDOM()
+    LIMIT ?
+  `);
+  const courses = stmt.all(limit);
+  res.json(courses);
+});
+
+router.post('/courses', (req: any, res) => {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const { title, description, category, thumbnail } = req.body;
+  const stmt = db.prepare('INSERT INTO courses (title, description, category, thumbnail, created_by) VALUES (?, ?, ?, ?, ?)');
+  const info = stmt.run(title, description, category, thumbnail, req.user.id);
+  res.json({ id: info.lastInsertRowid, title, description, category, thumbnail, created_by: req.user.id });
+});
+
 router.get('/courses/:id', (req: any, res) => {
-  const courseStmt = db.prepare('SELECT * FROM courses WHERE id = ?');
-  const course = courseStmt.get(req.params.id);
+  // Increment views
+  db.prepare('UPDATE courses SET views = views + 1 WHERE id = ?').run(req.params.id);
+
+  const courseStmt = db.prepare(`
+    SELECT c.*, 
+           (SELECT AVG(rating) FROM ratings WHERE course_id = c.id) as avg_rating,
+           (SELECT COUNT(*) FROM ratings WHERE course_id = c.id) as rating_count,
+           u.username as author_name
+    FROM courses c
+    LEFT JOIN users u ON c.created_by = u.id
+    WHERE c.id = ?
+  `);
+  const course = courseStmt.get(req.params.id) as any;
   
   if (!course) return res.status(404).json({ error: 'Course not found' });
+
+  // Check if current user has rated
+  const userRatingStmt = db.prepare('SELECT rating FROM ratings WHERE course_id = ? AND user_id = ?');
+  const userRating = userRatingStmt.get(req.params.id, req.user.id) as any;
+  course.user_rating = userRating ? userRating.rating : null;
 
   const lessonsStmt = db.prepare(`
     SELECT l.*, 
@@ -50,6 +99,44 @@ router.get('/courses/:id', (req: any, res) => {
   res.json({ ...course, lessons });
 });
 
+router.post('/courses/:id/rate', (req: any, res) => {
+  const { rating } = req.body;
+  if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Invalid rating' });
+
+  const stmt = db.prepare(`
+    INSERT INTO ratings (course_id, user_id, rating) 
+    VALUES (?, ?, ?) 
+    ON CONFLICT(course_id, user_id) DO UPDATE SET rating = excluded.rating
+  `);
+  stmt.run(req.params.id, req.user.id, rating);
+  res.json({ success: true });
+});
+
+router.post('/admin/courses/:id/certify', (req: any, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+  const { is_certified } = req.body;
+  const stmt = db.prepare('UPDATE courses SET is_certified = ? WHERE id = ?');
+  stmt.run(is_certified ? 1 : 0, req.params.id);
+  res.json({ success: true });
+});
+
+router.put('/courses/:id', (req: any, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') return res.status(403).json({ error: 'Forbidden' });
+  
+  if (req.user.role === 'teacher') {
+    const course = db.prepare('SELECT created_by FROM courses WHERE id = ?').get(req.params.id) as any;
+    if (!course || course.created_by !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const { title, description, category, thumbnail } = req.body;
+  const stmt = db.prepare('UPDATE courses SET title = ?, description = ?, category = ?, thumbnail = ? WHERE id = ?');
+  const info = stmt.run(title, description, category, thumbnail, req.params.id);
+  
+  if (info.changes === 0) return res.status(404).json({ error: 'Course not found' });
+  
+  res.json({ success: true });
+});
+
 // Lessons
 router.get('/lessons/:id', (req, res) => {
   const stmt = db.prepare('SELECT * FROM lessons WHERE id = ?');
@@ -58,7 +145,30 @@ router.get('/lessons/:id', (req, res) => {
   res.json(lesson);
 });
 
-router.put('/lessons/:id', (req, res) => {
+router.post('/lessons', (req: any, res) => {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const { course_id, title, video_url, summary } = req.body;
+  
+  // Get max order_index
+  const orderStmt = db.prepare('SELECT MAX(order_index) as max_order FROM lessons WHERE course_id = ?');
+  const result = orderStmt.get(course_id) as any;
+  const nextOrder = (result.max_order || 0) + 1;
+
+  const stmt = db.prepare('INSERT INTO lessons (course_id, title, video_url, summary, order_index) VALUES (?, ?, ?, ?, ?)');
+  const info = stmt.run(course_id, title, video_url, summary, nextOrder);
+  res.json({ id: info.lastInsertRowid, course_id, title, video_url, summary, order_index: nextOrder });
+});
+
+router.put('/lessons/:id', (req: any, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') return res.status(403).json({ error: 'Forbidden' });
+  
+  if (req.user.role === 'teacher') {
+    const lesson = db.prepare('SELECT c.created_by FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(req.params.id) as any;
+    if (!lesson || lesson.created_by !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  }
+
   const { title, video_url, summary } = req.body;
   const stmt = db.prepare('UPDATE lessons SET title = ?, video_url = ?, summary = ? WHERE id = ?');
   const info = stmt.run(title, video_url, summary, req.params.id);
@@ -78,6 +188,35 @@ router.get('/quizzes/:lessonId', (req, res) => {
     options: JSON.parse(q.options)
   }));
   res.json(parsedQuizzes);
+});
+
+router.post('/quizzes', (req: any, res) => {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const { lesson_id, question, options, correct_option, type } = req.body;
+  
+  if (req.user.role === 'teacher') {
+    const lesson = db.prepare('SELECT c.created_by FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(lesson_id) as any;
+    if (!lesson || lesson.created_by !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const stmt = db.prepare('INSERT INTO quizzes (lesson_id, question, options, correct_option, type) VALUES (?, ?, ?, ?, ?)');
+  const info = stmt.run(lesson_id, question, JSON.stringify(options), correct_option, type || 'multiple_choice');
+  res.json({ id: info.lastInsertRowid, lesson_id, question, options, correct_option, type: type || 'multiple_choice' });
+});
+
+router.delete('/admin/quizzes/:id', (req: any, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') return res.status(403).json({ error: 'Forbidden' });
+  
+  if (req.user.role === 'teacher') {
+    const quiz = db.prepare('SELECT c.created_by FROM quizzes q JOIN lessons l ON q.lesson_id = l.id JOIN courses c ON l.course_id = c.id WHERE q.id = ?').get(req.params.id) as any;
+    if (!quiz || quiz.created_by !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const stmt = db.prepare('DELETE FROM quizzes WHERE id = ?');
+  stmt.run(req.params.id);
+  res.json({ success: true });
 });
 
 // Progress & Gamification
@@ -202,7 +341,30 @@ router.post('/progress', (req: any, res) => {
 });
 
 router.get('/leaderboard', (req, res) => {
-  const stmt = db.prepare('SELECT username, points FROM users ORDER BY points DESC LIMIT 10');
+  try {
+    const stmt = db.prepare('SELECT username, points FROM users WHERE LOWER(role) = LOWER(?) ORDER BY points DESC LIMIT 10');
+    const leaderboard = stmt.all('student');
+    res.json(leaderboard);
+  } catch (error) {
+    console.error('Leaderboard error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/teacher-leaderboard', (req, res) => {
+  const stmt = db.prepare(`
+    SELECT u.username, 
+           SUM(c.views) as total_views,
+           AVG(r.rating) as avg_rating,
+           COUNT(DISTINCT c.id) as course_count
+    FROM users u
+    JOIN courses c ON u.id = c.created_by
+    LEFT JOIN ratings r ON c.id = r.course_id
+    WHERE u.role = 'teacher' OR u.role = 'admin'
+    GROUP BY u.id
+    ORDER BY total_views DESC, avg_rating DESC
+    LIMIT 10
+  `);
   const leaderboard = stmt.all();
   res.json(leaderboard);
 });
@@ -216,6 +378,58 @@ router.get('/my-badges', (req: any, res) => {
   `);
   const badges = stmt.all(req.user.id);
   res.json(badges);
+});
+
+// Admin endpoints
+router.get('/admin/users', (req: any, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+  const stmt = db.prepare('SELECT id, username, role, points FROM users ORDER BY created_at DESC');
+  const users = stmt.all();
+  res.json(users);
+});
+
+router.delete('/admin/users/:id', (req: any, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+  const stmt = db.prepare('DELETE FROM users WHERE id = ?');
+  stmt.run(req.params.id);
+  res.json({ success: true });
+});
+
+router.patch('/admin/users/:id/role', (req: any, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+  const { role } = req.body;
+  if (!['student', 'teacher', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+  const stmt = db.prepare('UPDATE users SET role = ? WHERE id = ?');
+  stmt.run(role, req.params.id);
+  res.json({ success: true });
+});
+
+router.delete('/admin/courses/:id', (req: any, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') return res.status(403).json({ error: 'Forbidden' });
+  
+  if (req.user.role === 'teacher') {
+    const course = db.prepare('SELECT created_by FROM courses WHERE id = ?').get(req.params.id) as any;
+    if (!course || course.created_by !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const stmt = db.prepare('DELETE FROM courses WHERE id = ?');
+  stmt.run(req.params.id);
+  res.json({ success: true });
+});
+
+router.delete('/admin/lessons/:id', (req: any, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') return res.status(403).json({ error: 'Forbidden' });
+  
+  if (req.user.role === 'teacher') {
+    const lesson = db.prepare('SELECT c.created_by FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(req.params.id) as any;
+    if (!lesson || lesson.created_by !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const stmt = db.prepare('DELETE FROM lessons WHERE id = ?');
+  stmt.run(req.params.id);
+  res.json({ success: true });
 });
 
 export default router;

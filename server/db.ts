@@ -26,6 +26,8 @@ export function initDb() {
       category TEXT,
       thumbnail TEXT,
       created_by INTEGER,
+      views INTEGER DEFAULT 0,
+      is_certified BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(created_by) REFERENCES users(id)
     )
@@ -52,7 +54,22 @@ export function initDb() {
       question TEXT NOT NULL,
       options TEXT NOT NULL, -- JSON string of options
       correct_option INTEGER NOT NULL, -- Index of correct option
+      type TEXT DEFAULT 'multiple_choice', -- 'multiple_choice' or 'true_false'
       FOREIGN KEY(lesson_id) REFERENCES lessons(id)
+    )
+  `);
+
+  // Ratings table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(course_id) REFERENCES courses(id),
+      FOREIGN KEY(user_id) REFERENCES users(id),
+      UNIQUE(course_id, user_id)
     )
   `);
 
@@ -79,6 +96,15 @@ export function initDb() {
   } catch (e) {}
   try {
     db.exec('ALTER TABLE progress ADD COLUMN quiz_completed BOOLEAN DEFAULT 0');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE courses ADD COLUMN views INTEGER DEFAULT 0');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE courses ADD COLUMN is_certified BOOLEAN DEFAULT 0');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE quizzes ADD COLUMN type TEXT DEFAULT "multiple_choice"');
   } catch (e) {}
 
   // Badges table

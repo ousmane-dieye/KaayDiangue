@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import db from '../db';
+import db from '../db.ts';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_change_me';
@@ -16,7 +16,12 @@ router.post('/register', (req, res) => {
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const userRole = role || 'student';
+  let userRole = role || 'student';
+
+  // Security: Prevent self-registration as admin
+  if (userRole === 'admin') {
+    userRole = 'student';
+  }
 
   try {
     const stmt = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)');

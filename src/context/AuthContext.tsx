@@ -10,8 +10,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (credentials: any) => Promise<void>;
-  register: (credentials: any) => Promise<void>;
+  login: (credentials: any) => Promise<any>;
+  register: (credentials: any) => Promise<any>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(credentials),
     });
     setUser(data.user);
+    return data;
   }
 
   async function register(credentials: any) {
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(credentials),
     });
     setUser(data.user);
+    return data;
   }
 
   async function logout() {

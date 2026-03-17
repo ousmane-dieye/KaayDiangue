@@ -1,80 +1,108 @@
 import { Link } from 'react-router-dom';
-import { Play, Award, Zap } from 'lucide-react';
+import { Play, Award, Zap, ChevronRight, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function Home() {
   return (
-    <div className="bg-white dark:bg-gray-900 transition-colors duration-200">
-      <div className="relative isolate px-6 pt-14 lg:px-8">
-        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
-              Learn in Minutes, Not Hours
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
-              Micro-learning platform designed for the modern age. Watch short videos, take quick quizzes, and earn badges.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link
-                to="/register"
-                className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-              >
-                Get started
-              </Link>
-              <Link to="/login" className="text-sm font-semibold leading-6 text-gray-900 dark:text-white">
-                Log in <span aria-hidden="true">→</span>
-              </Link>
-            </div>
+    <div className="space-y-24 pb-20">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden pt-16 pb-8">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10 opacity-20 dark:opacity-10 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-indigo-500 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500 rounded-full blur-3xl animate-pulse delay-700" />
+        </div>
+
+        <div className="text-center space-y-8 max-w-4xl mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-sm font-medium"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Apprendre n'a jamais été aussi simple</span>
+          </motion.div>
+
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.1]">
+            Apprenez en <span className="text-indigo-600 dark:text-indigo-400">Minutes</span>, pas en Heures
+          </h1>
+          
+          <p className="text-xl text-slate-700 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+            La plateforme de micro-apprentissage conçue pour l'ère moderne. 
+            Vidéos courtes, quiz rapides et badges de réussite.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <Link to="/courses" className="btn-primary px-8 py-4 text-lg flex items-center group">
+              Commencer maintenant
+              <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link to="/login" className="px-8 py-4 text-lg font-semibold text-slate-800 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              Se connecter
+            </Link>
           </div>
         </div>
-      </div>
+      </section>
       
-      <div className="bg-gray-50 dark:bg-gray-800 py-24 sm:py-32 transition-colors duration-200">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold leading-7 text-indigo-600 dark:text-indigo-400">Learn Faster</h2>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              Everything you need to master a skill
-            </p>
-          </div>
-          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-            <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-3 lg:gap-y-16">
-              <div className="relative pl-16">
-                <dt className="text-base font-semibold leading-7 text-gray-900 dark:text-white">
-                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500">
-                    <Play className="h-6 w-6 text-white" aria-hidden="true" />
-                  </div>
-                  Short Videos
-                </dt>
-                <dd className="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
-                  Bite-sized video content that fits into your busy schedule.
-                </dd>
+      {/* Features Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              title: "Vidéos Courtes",
+              desc: "Contenu vidéo condensé qui s'adapte à votre emploi du temps chargé.",
+              icon: Play,
+              color: "bg-blue-500"
+            },
+            {
+              title: "Quiz Interactifs",
+              desc: "Testez vos connaissances immédiatement pour renforcer l'apprentissage.",
+              icon: Zap,
+              color: "bg-yellow-500"
+            },
+            {
+              title: "Gamification",
+              desc: "Gagnez des points et des badges au fur et à mesure de votre progression.",
+              icon: Award,
+              color: "bg-indigo-500"
+            }
+          ].map((feature, idx) => (
+            <motion.div
+              key={idx}
+              whileHover={{ y: -5 }}
+              className="p-8 rounded-3xl glass hover:border-indigo-500/50 transition-all duration-300 group"
+            >
+              <div className={`${feature.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-${feature.color.split('-')[1]}-500/20 group-hover:scale-110 transition-transform`}>
+                <feature.icon className="h-6 w-6 text-white" />
               </div>
-              <div className="relative pl-16">
-                <dt className="text-base font-semibold leading-7 text-gray-900 dark:text-white">
-                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500">
-                    <Zap className="h-6 w-6 text-white" aria-hidden="true" />
-                  </div>
-                  Interactive Quizzes
-                </dt>
-                <dd className="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
-                  Test your knowledge immediately after watching to reinforce learning.
-                </dd>
+              <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{feature.title}</h3>
+              <p className="text-slate-700 dark:text-slate-400 leading-relaxed">
+                {feature.desc}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-[3rem] bg-indigo-600 p-12 md:p-20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+          
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { label: "Étudiants", value: "10k+" },
+              { label: "Cours", value: "500+" },
+              { label: "Quiz", value: "2k+" },
+              { label: "Badges", value: "50k+" }
+            ].map((stat, idx) => (
+              <div key={idx} className="space-y-2">
+                <div className="text-4xl md:text-5xl font-bold text-white font-display">{stat.value}</div>
+                <div className="text-indigo-100 font-medium">{stat.label}</div>
               </div>
-              <div className="relative pl-16">
-                <dt className="text-base font-semibold leading-7 text-gray-900 dark:text-white">
-                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500">
-                    <Award className="h-6 w-6 text-white" aria-hidden="true" />
-                  </div>
-                  Gamification
-                </dt>
-                <dd className="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
-                  Earn points and badges as you progress through courses.
-                </dd>
-              </div>
-            </dl>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
