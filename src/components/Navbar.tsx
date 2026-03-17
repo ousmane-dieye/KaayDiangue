@@ -18,7 +18,7 @@ export default function Navbar() {
               <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:rotate-12 transition-transform duration-200">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
-              <span className="ml-2 text-xl font-bold font-display text-slate-900 dark:text-white">Kaay Diague</span>
+              <span className="ml-2 text-xl font-bold font-display text-slate-900 dark:text-white">Kaay Diang</span>
             </Link>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-6">
               <Link to="/" className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors">
