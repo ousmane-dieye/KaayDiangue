@@ -5,23 +5,7 @@ import jwt from 'jsonwebtoken';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_change_me';
 
-// Middleware to verify token
-const authenticate = (req: any, res: any, next: any) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
-router.use(authenticate);
-
-// Courses
+// Courses (Public)
 router.get('/courses', (req, res) => {
   const stmt = db.prepare(`
     SELECT c.*, 
@@ -51,17 +35,25 @@ router.get('/courses/random', (req, res) => {
   res.json(courses);
 });
 
-router.post('/courses', (req: any, res) => {
-  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
+// Optional authentication middleware
+const optionalAuthenticate = (req: any, res: any, next: any) => {
+  const token = req.cookies.token;
+  if (!token) {
+    req.user = null;
+    return next();
   }
-  const { title, description, category, thumbnail } = req.body;
-  const stmt = db.prepare('INSERT INTO courses (title, description, category, thumbnail, created_by) VALUES (?, ?, ?, ?, ?)');
-  const info = stmt.run(title, description, category, thumbnail, req.user.id);
-  res.json({ id: info.lastInsertRowid, title, description, category, thumbnail, created_by: req.user.id });
-});
 
-router.get('/courses/:id', (req: any, res) => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    req.user = decoded;
+    next();
+  } catch (err) {
+    req.user = null;
+    next();
+  }
+};
+
+router.get('/courses/:id', optionalAuthenticate, (req: any, res) => {
   // Increment views
   db.prepare('UPDATE courses SET views = views + 1 WHERE id = ?').run(req.params.id);
 
@@ -79,9 +71,13 @@ router.get('/courses/:id', (req: any, res) => {
   if (!course) return res.status(404).json({ error: 'Course not found' });
 
   // Check if current user has rated
-  const userRatingStmt = db.prepare('SELECT rating FROM ratings WHERE course_id = ? AND user_id = ?');
-  const userRating = userRatingStmt.get(req.params.id, req.user.id) as any;
-  course.user_rating = userRating ? userRating.rating : null;
+  let userRating = null;
+  if (req.user) {
+    const userRatingStmt = db.prepare('SELECT rating FROM ratings WHERE course_id = ? AND user_id = ?');
+    const ratingResult = userRatingStmt.get(req.params.id, req.user.id) as any;
+    userRating = ratingResult ? ratingResult.rating : null;
+  }
+  course.user_rating = userRating;
 
   const lessonsStmt = db.prepare(`
     SELECT l.*, 
@@ -94,9 +90,37 @@ router.get('/courses/:id', (req: any, res) => {
     WHERE l.course_id = ? 
     ORDER BY l.order_index
   `);
-  const lessons = lessonsStmt.all(req.user.id, req.params.id);
+  const lessons = lessonsStmt.all(req.user ? req.user.id : -1, req.params.id);
 
   res.json({ ...course, lessons });
+});
+
+// Middleware to verify token for protected routes
+const authenticate = (req: any, res: any, next: any) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+router.use(authenticate);
+
+// Protected routes below
+
+router.post('/courses', (req: any, res) => {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const { title, description, category, thumbnail } = req.body;
+  const stmt = db.prepare('INSERT INTO courses (title, description, category, thumbnail, created_by) VALUES (?, ?, ?, ?, ?)');
+  const info = stmt.run(title, description, category, thumbnail, req.user.id);
+  res.json({ id: info.lastInsertRowid, title, description, category, thumbnail, created_by: req.user.id });
 });
 
 router.post('/courses/:id/rate', (req: any, res) => {

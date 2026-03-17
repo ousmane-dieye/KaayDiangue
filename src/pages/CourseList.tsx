@@ -8,7 +8,12 @@ export default function CourseList() {
   const [courses, setCourses] = useState<any[]>([]);
 
   useEffect(() => {
-    apiRequest('/courses').then(setCourses);
+    apiRequest('/courses')
+      .then(setCourses)
+      .catch(err => {
+        console.error('Failed to fetch courses:', err);
+        setCourses([]);
+      });
   }, []);
 
   return (

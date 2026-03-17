@@ -1,8 +1,13 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
 
-const db = new Database('microlearn.db');
+const isVercel = process.env.VERCEL === '1';
+const dbPath = isVercel ? '/tmp/microlearn.db' : 'microlearn.db';
+
+// On Vercel, we might need to ensure the DB exists or is seeded
+const db = new Database(dbPath);
 
 export function initDb() {
   // Users table

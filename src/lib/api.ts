@@ -8,10 +8,23 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     },
   });
 
+  const contentType = res.headers.get('content-type');
+  const isJson = contentType && contentType.includes('application/json');
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Something went wrong');
+    if (isJson) {
+      const error = await res.json();
+      throw new Error(error.error || 'Something went wrong');
+    } else {
+      const text = await res.text();
+      console.error('Non-JSON error response:', text.substring(0, 100));
+      throw new Error(`Server error: ${res.status} ${res.statusText}`);
+    }
   }
 
-  return res.json();
+  if (isJson) {
+    return res.json();
+  }
+  
+  return res.text();
 }
