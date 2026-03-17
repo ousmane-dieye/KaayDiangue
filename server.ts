@@ -3,9 +3,9 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
-import { initDb } from './server/db.ts';
-import authRoutes from './server/routes/auth.ts';
-import apiRoutes from './server/routes/api.ts';
+import { initDb } from './server/db.js';
+import authRoutes from './server/routes/auth.js';
+import apiRoutes from './server/routes/api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
