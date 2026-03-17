@@ -2,25 +2,32 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isVercel = process.env.VERCEL === '1';
-const dbPath = isVercel ? '/tmp/microlearn.db' : 'microlearn.db';
+const dbPath = isVercel ? '/tmp/microlearn.db' : path.join(process.cwd(), 'microlearn.db');
+
+console.log('Database path:', dbPath);
 
 // On Vercel, we might need to ensure the DB exists or is seeded
 const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
 
 export function initDb() {
-  // Users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin')),
-      points INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  console.log('Initializing database...');
+  try {
+    // Users table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin')),
+        points INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
   // Courses table
   db.exec(`
@@ -238,8 +245,11 @@ export function initDb() {
     updateVideo.run('https://www.youtube.com/watch?v=xsVTqzratPs', 'SEO Basics');
     updateVideo.run('https://www.youtube.com/watch?v=SqcY0GlETPk', 'Components & Props');
   } catch (e) {
-    console.error('Failed to update video URLs', e);
+    console.error('Database initialization error:', e);
   }
+} catch (err) {
+  console.error('Global database init error:', err);
+}
 }
 
 export default db;

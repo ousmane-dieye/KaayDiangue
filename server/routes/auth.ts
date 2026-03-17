@@ -15,33 +15,46 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  let userRole = role || 'student';
-
-  // Security: Prevent self-registration as admin
-  if (userRole === 'admin') {
-    userRole = 'student';
-  }
-
   try {
+    console.log('Hashing password...');
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    let userRole = role || 'student';
+
+    // Security: Prevent self-registration as admin
+    if (userRole === 'admin') {
+      userRole = 'student';
+    }
+
+    console.log('Inserting user into DB...');
     const stmt = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)');
     const info = stmt.run(username, hashedPassword, userRole);
     
-    const token = jwt.sign({ id: Number(info.lastInsertRowid), username, role: userRole }, JWT_SECRET, { expiresIn: '1d' });
+    console.log('Generating JWT...');
+    const userId = Number(info.lastInsertRowid);
+    const token = jwt.sign({ id: userId, username, role: userRole }, JWT_SECRET, { expiresIn: '1d' });
     
+    console.log('Setting cookie and sending response...');
     res.cookie('token', token, { 
       httpOnly: true, 
       secure: true, 
       sameSite: 'none',
       maxAge: 24 * 60 * 60 * 1000 
     });
-    res.json({ user: { id: Number(info.lastInsertRowid), username, role: userRole } });
+    res.json({ user: { id: userId, username, role: userRole } });
   } catch (err: any) {
-    console.error('Registration error:', err);
+    console.error('CRITICAL Registration error:', err);
+    const errorDetail = {
+      message: err.message,
+      code: err.code,
+      stack: err.stack
+    };
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return res.status(400).json({ error: 'Username already exists' });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: errorDetail 
+    });
   }
 });
 
